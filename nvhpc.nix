@@ -1,5 +1,5 @@
 {
-  stdenv,
+  stdenvNoCC,
   fetchzip,
   autoPatchelfHook,
   flock,
@@ -9,9 +9,9 @@
   libxml2,
   glibc,
   bc,
-  #gcc10
+  gcc10
 }:
-stdenv.mkDerivation rec {
+stdenvNoCC.mkDerivation rec {
   name = "nvhpc";
   version = "21.1";
   src = fetchzip {
@@ -27,7 +27,7 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [
     autoPatchelfHook
     flock
-    #gcc10
+    gcc10
   ];
 
   buildInputs = [

@@ -8,9 +8,9 @@
     pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
     pkgs2 = import inputs.glibc { system = "x86_64-linux"; config.allowUnfree = true; };
   in {
-    packages.x86_64-linux.default = pkgs.callPackage ./nvhpc.nix { glibc = pkgs2.glibc; libgcc = pkgs2.gcc10.cc.lib; stdenv = pkgs.gcc10Stdenv; };
+    packages.x86_64-linux.default = pkgs.callPackage ./nvhpc.nix { glibc = pkgs2.glibc; libgcc = pkgs2.gcc10.cc.lib; gcc10 = pkgs2.gcc10; };
     packages.x86_64-linux.nvhpcStdenv = pkgs.callPackage ./nvhpcStdenv.nix {};
-    devShells.x86_64-linux.default = (pkgs.mkShell.override { stdenv = pkgs.gcc10Stdenv; }) {
+    devShells.x86_64-linux.default = (pkgs.mkShell.override { stdenv = pkgs2.gcc10Stdenv; }) {
       langFortran = true;
       nativeBuildInputs = with pkgs; [
         pkg-config
