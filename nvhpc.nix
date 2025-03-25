@@ -9,7 +9,8 @@
   libxml2,
   glibc,
   bc,
-  gcc10
+  gfortran,
+  file
 }:
 stdenvNoCC.mkDerivation rec {
   name = "nvhpc";
@@ -27,7 +28,9 @@ stdenvNoCC.mkDerivation rec {
   nativeBuildInputs = [
     autoPatchelfHook
     flock
-    gcc10
+    gfortran
+    gfortran.cc
+    file
   ];
 
   buildInputs = [
@@ -36,7 +39,7 @@ stdenvNoCC.mkDerivation rec {
 
   patchPhase = ''
     find ./install_components/Linux_x86_64/${version} -type f -executable -exec file {} + | awk -F: '/dynamically linked/ && !/shared object/ {print $1}' \
-      | xargs -I{} patchelf --set-interpreter "$(cat "$NIX_CC"/nix-support/dynamic-linker)" --set-rpath "${libgcc.lib}/lib:${libgcc.out}/lib:${libz}/lib:${zstd.out}/lib:${libxml2}/lib" "{}"
+      | xargs -I{} patchelf --set-interpreter "$(cat "$NIX_CC"/nix-support/dynamic-linker)" --set-rpath "${gfortran.cc.lib}/lib:${libgcc.out}/lib:${libz}/lib:${zstd.out}/lib:${libxml2}/lib" "{}"
   '';
 
   installPhase = ''

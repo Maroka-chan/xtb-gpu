@@ -5,15 +5,25 @@
   };
 
   outputs = inputs @ { self, nixpkgs, ... }: let
-    pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
-    pkgs2 = import inputs.glibc { system = "x86_64-linux"; config.allowUnfree = true; };
+    pkgs_new = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
+    pkgs = import inputs.glibc { system = "x86_64-linux"; config.allowUnfree = true; };
+
+    gfortran = pkgs.buildPackages.wrapCC (pkgs.buildPackages.gcc10.cc.override {
+          name = "gfortran";
+          langFortran = true;
+          langCC = true;
+          langC = true;
+          profiledCompiler = false;
+      });
   in {
-    packages.x86_64-linux.default = pkgs.callPackage ./nvhpc.nix { glibc = pkgs2.glibc; libgcc = pkgs2.gcc10.cc.lib; gcc10 = pkgs2.gcc10; };
+    packages.x86_64-linux.default = pkgs.callPackage ./nvhpc.nix { inherit gfortran; libz = pkgs_new.libz; };#{ glibc = pkgs2.glibc; libgcc = pkgs2.gcc10.cc.lib; gcc10 = pkgs2.gcc10; };
     packages.x86_64-linux.nvhpcStdenv = pkgs.callPackage ./nvhpcStdenv.nix {};
-    devShells.x86_64-linux.default = (pkgs.mkShell.override { stdenv = pkgs2.gcc10Stdenv; }) {
-      langFortran = true;
+    devShells.x86_64-linux.default = pkgs.stdenvNoCC.mkDerivation {
+      name = "shell";
       nativeBuildInputs = with pkgs; [
         pkg-config
+	gfortran
+	gfortran.cc
       ];
       buildInputs = with pkgs; [
         meson
@@ -23,7 +33,7 @@
         openblasCompat
         openblasCompat.dev
         python3
-        mkl
+        pkgs_new.mkl
         cmake
         asciidoctor
       ];
