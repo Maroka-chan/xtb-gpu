@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "glibc": {
-      "locked": {
-        "lastModified": 1608815389,
-        "narHash": "sha256-nAiG+KujbCx0jlqbteTapdCv+zkzNUhohX1zQpubJ7c=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "3b05df1d13c1b315cecc610a2f3180f6669442f0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "3b05df1d13c1b315cecc610a2f3180f6669442f0",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1742751704,
@@ -32,10 +16,26 @@
         "type": "github"
       }
     },
+    "nixpkgs_old": {
+      "locked": {
+        "lastModified": 1608815389,
+        "narHash": "sha256-nAiG+KujbCx0jlqbteTapdCv+zkzNUhohX1zQpubJ7c=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "3b05df1d13c1b315cecc610a2f3180f6669442f0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "3b05df1d13c1b315cecc610a2f3180f6669442f0",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
-        "glibc": "glibc",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "nixpkgs_old": "nixpkgs_old"
       }
     }
   },
