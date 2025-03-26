@@ -1,7 +1,6 @@
 {
   stdenvNoCC,
   fetchzip,
-  autoPatchelfHook,
   flock,
   libgcc,
   libz,
@@ -9,8 +8,8 @@
   libxml2,
   glibc,
   bc,
-  gfortran,
-  file
+  file,
+  gcc10
 }:
 stdenvNoCC.mkDerivation rec {
   name = "nvhpc";
@@ -21,25 +20,19 @@ stdenvNoCC.mkDerivation rec {
   };
 
   dontConfigure = true;
-  #dontPatch = true;
   dontBuild = true;
   dontFixup = true;
 
   nativeBuildInputs = [
-    autoPatchelfHook
     flock
-    gfortran
-    gfortran.cc
+    gcc10
     file
-  ];
-
-  buildInputs = [
     bc
   ];
 
   patchPhase = ''
     find ./install_components/Linux_x86_64/${version} -type f -executable -exec file {} + | awk -F: '/dynamically linked/ && !/shared object/ {print $1}' \
-      | xargs -I{} patchelf --set-interpreter "$(cat "$NIX_CC"/nix-support/dynamic-linker)" --set-rpath "${gfortran.cc.lib}/lib:${libgcc.out}/lib:${libz}/lib:${zstd.out}/lib:${libxml2}/lib" "{}"
+      | xargs -I{} patchelf --set-interpreter "$(cat "$NIX_CC"/nix-support/dynamic-linker)" --set-rpath "${gcc10.cc.lib}/lib:${libgcc.out}/lib:${libz}/lib:${zstd.out}/lib:${libxml2}/lib" "{}"
   '';
 
   installPhase = ''
@@ -51,10 +44,7 @@ stdenvNoCC.mkDerivation rec {
     sed -i '/makelocalrc executed by/d' install_components/Linux_x86_64/${version}/compilers/bin/makelocalrc
 
     patchShebangs ./install
-    NVHPC_SILENT=true NVHPC_INSTALL_DIR=$out NVHPC_INSTALL_TYPE=single ./install #./install_components/install
-
-    addAutoPatchelfSearchPath $out/Linux_x86_64/${version}/cuda/11.2/targets/x86_64-linux/lib/stubs
-    addAutoPatchelfSearchPath $out/Linux_x86_64/${version}/compilers/lib
+    NVHPC_SILENT=true NVHPC_INSTALL_DIR=$out NVHPC_INSTALL_TYPE=single ./install
 
     # fix /usr/lib/crt1.o impure path used in link
     cat >> $out/Linux_x86_64/${version}/compilers/bin/localrc << EOF

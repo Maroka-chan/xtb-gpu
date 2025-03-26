@@ -7,13 +7,12 @@
   mkl,
   lapack,
   openblasCompat,
-  python3,
   cmake,
   asciidoctor,
   pkg-config,
-  gfortran,
   git,
-  hostname
+  hostname,
+  gcc10
 }:
 stdenvNoCC.mkDerivation {
   name = "xtb";
@@ -27,29 +26,24 @@ stdenvNoCC.mkDerivation {
 
   dontConfigure = true;
   dontPatch = true;
-  dontBuild = true;
   dontFixup = true;
 
   nativeBuildInputs = [
     pkg-config
-    gfortran
-    gfortran.cc
-    nvfortran
+    git
+    mkl
+    gcc10
     meson
     ninja
-    lapack
-    lapack.dev
-    openblasCompat
-    openblasCompat.dev
-    python3
-    mkl
     cmake
+    nvfortran
+    lapack.dev
+    openblasCompat.dev
     asciidoctor
-    git
     hostname
   ];
 
-  installPhase = let
+  buildPhase = let
     nvhome = nvfortran;
     target = "Linux_x86_64";
     version = "21.1";
@@ -58,7 +52,7 @@ stdenvNoCC.mkDerivation {
     nvmathdir = "${nvhome}/${target}/${version}/math_libs";
     nvcommdir = "${nvhome}/${target}/${version}/comm_libs";
   in ''
-    mkdir -p $out/{bin,lib,include,share,man}
+    runHook preBuild
 
     export NVHPC=${nvhome}
     export CC=${nvcompdir}/bin/nvc
@@ -89,7 +83,16 @@ stdenvNoCC.mkDerivation {
       --datadir=share \
       --mandir=man
 
+    runHook postBuild
+  '';
+
+  installPhase = ''
+    runHook preInstall
+
+    mkdir -p $out/{bin,lib,include,share,man}
     ninja -C build_gpu install
+
+    runHook postInstall
   '';
 }
 
