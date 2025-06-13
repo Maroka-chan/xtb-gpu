@@ -1,0 +1,174 @@
+diff --git a/opencl/CMakeLists.txt b/opencl/CMakeLists.txt
+index 808fc98c6..34dbdd99f 100644
+--- a/opencl/CMakeLists.txt
++++ b/opencl/CMakeLists.txt
+@@ -11,38 +11,11 @@ if (MSVC)
+   )
+ endif()
+ 
+-# Repo URLs
+-
+-set(OCL_HEADERS_REPO
+-  "https://github.com/KhronosGroup/OpenCL-Headers.git")
+-set(OCL_LOADER_REPO
+-  "https://github.com/KhronosGroup/OpenCL-ICD-Loader.git")
+-
+-# Repo tags/hashes
+-
+-set(OCL_HEADERS_TAG 542d7a8f65ecfd88b38de35d8b10aa67b36b33b2)
+-set(OCL_LOADER_TAG 804b6f040503c47148bee535230070da6b857ae4)
+-
+-# OpenCL Headers
+-if(NOT OpenCL_HEADERS)
+-  message(STATUS "Will fetch OpenCL headers from ${OCL_HEADERS_REPO}")
+-
+-  FetchContent_Declare(ocl-headers
+-    GIT_REPOSITORY    ${OCL_HEADERS_REPO}
+-    GIT_TAG           ${OCL_HEADERS_TAG}
+-  )
+-else()
+-  message(STATUS "OpenCL headers are added manually ${OpenCL_HEADERS}")
+-
+-  FetchContent_Declare(ocl-headers
+-    URL               ${OpenCL_HEADERS}
+-  )
++if (NOT OpenCL_HEADERS)
++  message(FATAL_ERROR "OpenCL_HEADERS must be set explicitly in a Nix build")
+ endif()
+ 
+-FetchContent_MakeAvailable(ocl-headers)
+-FetchContent_GetProperties(ocl-headers)
+-set(OpenCL_INCLUDE_DIR
+-  ${ocl-headers_SOURCE_DIR} CACHE PATH "Path to OpenCL Headers")
++set(OpenCL_INCLUDE_DIR ${OpenCL_HEADERS} CACHE PATH "Path to OpenCL Headers")
+ 
+ target_compile_definitions(Headers INTERFACE -DCL_TARGET_OPENCL_VERSION=300)
+ add_library(OpenCL-Headers ALIAS Headers)
+@@ -57,25 +30,12 @@ set(OPENCL_ICD_LOADER_HEADERS_DIR
+ # library.
+ set(BUILD_SHARED_LIBS ON)
+ 
+-if(NOT OpenCL_LIBRARY_SRC)
+-  message(STATUS "Will fetch OpenCL ICD Loader from ${OCL_LOADER_REPO}")
+-
+-  FetchContent_Declare(ocl-icd
+-    GIT_REPOSITORY    ${OCL_LOADER_REPO}
+-    GIT_TAG           ${OCL_LOADER_TAG}
+-  )
+-else()
+-  # TODO: add possibility to use prebuilt OpenCL library rather than building
+-  #       together with llvm.
+-  message(STATUS
+-    "OpenCL ICD Loader sources added manually ${OpenCL_LIBRARY_SRC}")
+-
+-  FetchContent_Declare(ocl-icd
+-    URL               ${OpenCL_LIBRARY_SRC}
+-  )
++if (NOT OpenCL_LIBRARY_SRC)
++  message(FATAL_ERROR "OpenCL_LIBRARY_SRC must be set explicitly in a Nix build")
+ endif()
+ 
+-FetchContent_MakeAvailable(ocl-icd)
++set(OPENCL_ICD_LOADER_HEADERS_DIR ${OpenCL_INCLUDE_DIR} CACHE PATH "Path to OpenCL Headers")
++add_subdirectory(${OpenCL_LIBRARY_SRC} opencl-icd-build)
+ add_library(OpenCL-ICD ALIAS OpenCL)
+ 
+ add_subdirectory(opencl-aot)
+diff --git a/unified-runtime/cmake/FetchLevelZero.cmake b/unified-runtime/cmake/FetchLevelZero.cmake
+index c4d0c9542..95f0671d4 100644
+--- a/unified-runtime/cmake/FetchLevelZero.cmake
++++ b/unified-runtime/cmake/FetchLevelZero.cmake
+@@ -102,21 +102,7 @@ target_include_directories(LevelZeroLoader-Headers
+               "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+ )
+ 
+-if (UR_COMPUTE_RUNTIME_REPO STREQUAL "")
+-set(UR_COMPUTE_RUNTIME_REPO "https://github.com/intel/compute-runtime.git")
+-endif()
+-if (UR_COMPUTE_RUNTIME_TAG STREQUAL "")
+-set(UR_COMPUTE_RUNTIME_TAG 25.05.32567.17)
+-endif()
+-include(FetchContent)
+-# Sparse fetch only the dir with level zero headers for experimental features to avoid pulling in the entire compute-runtime.
+-FetchContentSparse_Declare(exp-headers ${UR_COMPUTE_RUNTIME_REPO} "${UR_COMPUTE_RUNTIME_TAG}" "level_zero/include")
+-FetchContent_GetProperties(exp-headers)
+-if(NOT exp-headers_POPULATED)
+-  FetchContent_Populate(exp-headers)
+-endif()
+ add_library(ComputeRuntimeLevelZero-Headers INTERFACE)
+-set(COMPUTE_RUNTIME_LEVEL_ZERO_INCLUDE "${exp-headers_SOURCE_DIR}/../..")
+ message(STATUS "Level Zero Adapter: Using Level Zero headers from ${COMPUTE_RUNTIME_LEVEL_ZERO_INCLUDE}")
+ target_include_directories(ComputeRuntimeLevelZero-Headers
+     INTERFACE "$<BUILD_INTERFACE:${COMPUTE_RUNTIME_LEVEL_ZERO_INCLUDE}>"
+diff --git a/unified-runtime/source/common/CMakeLists.txt b/unified-runtime/source/common/CMakeLists.txt
+index bc3c2aec6..7cf03f768 100644
+--- a/unified-runtime/source/common/CMakeLists.txt
++++ b/unified-runtime/source/common/CMakeLists.txt
+@@ -34,26 +34,11 @@ target_include_directories(ur_common PUBLIC
+     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+ )
+ 
+-message(STATUS "Download Unified Memory Framework from github.com")
+-if (NOT DEFINED UMF_REPO)
+-    set(UMF_REPO "https://github.com/oneapi-src/unified-memory-framework.git")
++if (NOT EXISTS ${UMF_SOURCE_DIR})
++    message(FATAL_ERROR "UMF source directory not found: ${UMF_SOURCE_DIR}")
+ endif()
+ 
+-if (NOT DEFINED UMF_TAG)
+-    # commit cbaf24ae0cf33356ddb1bdafe7197b2a90556cd7
+-    # Author: Łukasz Stolarczuk <lukasz.stolarczuk@intel.com>
+-    # Date:   Tue Mar 18 15:41:37 2025 +0100
+-    # 0.11.0-rc1 release
+-    set(UMF_TAG v0.11.0-rc1)
+-endif()
+-
+-message(STATUS "Will fetch Unified Memory Framework from ${UMF_REPO}")
+-
+-include(FetchContent)
+-FetchContent_Declare(unified-memory-framework
+-    GIT_REPOSITORY    ${UMF_REPO}
+-    GIT_TAG           ${UMF_TAG}
+-)
++add_subdirectory(${UMF_SOURCE_DIR} unified-memory-framework)
+ 
+ if (UR_STATIC_ADAPTER_L0)
+     if (UMF_BUILD_SHARED_LIBRARY)
+@@ -74,7 +59,6 @@ else()
+   set(UMF_BUILD_SHARED_LIBRARY ${UMF_BUILD_SHARED_LIBRARY} CACHE INTERNAL "Build UMF shared library")
+   set(UMF_BUILD_LIBUMF_POOL_DISJOINT ON CACHE INTERNAL "Build Disjoint Pool")
+ 
+-  FetchContent_MakeAvailable(unified-memory-framework)
+   FetchContent_GetProperties(unified-memory-framework)
+ endif()
+ 
+diff --git a/unified-runtime/test/CMakeLists.txt b/unified-runtime/test/CMakeLists.txt
+index e7514cefd..d89570c32 100644
+--- a/unified-runtime/test/CMakeLists.txt
++++ b/unified-runtime/test/CMakeLists.txt
+@@ -3,12 +3,11 @@
+ # See LICENSE.TXT
+ # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ 
+-include(FetchContent)
+-FetchContent_Declare(
+-  googletest
+-  GIT_REPOSITORY https://github.com/google/googletest.git
+-  GIT_TAG        release-1.12.1
+-)
++if (NOT EXISTS ${GTEST_SOURCE_DIR})
++    message(FATAL_ERROR "Googletest source directory not found: ${GTEST_SOURCE_DIR}")
++endif()
++
++add_subdirectory(${GTEST_SOURCE_DIR} googletest)
+ 
+ set(UR_TEST_DEVICES_COUNT 1 CACHE STRING "Count of devices on which conformance and adapters tests will be run")
+ set(UR_TEST_PLATFORMS_COUNT 1 CACHE STRING "Count of platforms on which conformance and adapters tests will be run")
+@@ -16,7 +15,6 @@ set(UR_TEST_FUZZTESTS ON CACHE BOOL "Run fuzz tests if using clang and UR_DPCXX
+ # For Windows: Prevent overriding the parent project's compiler/linker settings
+ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+ set(INSTALL_GTEST OFF)
+-FetchContent_MakeAvailable(googletest)
+ enable_testing()
+ 
+ # Conformance defines the generate_device_binaries target which should be
