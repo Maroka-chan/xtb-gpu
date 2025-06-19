@@ -81,7 +81,7 @@ constexpr std::array<double, kScale_size> kScale_host = {
     2.04, 2.23, 2.23, 2.23
 };
 
-constexpr int valenceShell_col_size = carbon_n_shell;
+constexpr int valenceShell_col_size = 3;
 constexpr int valenceShell_size = maxElem * valenceShell_col_size;
 constexpr std::array<int, valenceShell_size> valenceShellValues = {{
     1,0,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,0, 1,1,1,
@@ -316,7 +316,7 @@ constexpr std::array<double, slaterExponent_size> slaterExponentValues = { // ze
 //  return s2;
 //}
 
-void dd(int nat, const int *saoshell, int saoshell_col_size) {
+void build_SDQH0(int nat, const int *saoshell, int saoshell_col_size) {
   // trans = np.zeros((1,3)) is always a vector of 3 zeros since we don't have a 3d infinite periodic boundary condition, i.e. we don't try to simulate an infinite grid of our molecule.  
   size_t trans_size = 1;
 
@@ -331,6 +331,8 @@ void dd(int nat, const int *saoshell, int saoshell_col_size) {
   std::cout << "Selected device: "
             << q.get_device().get_info<info::device::name>()
             << "\n";
+
+  ///////////// Copy to shared memory ////////////////
 
   int nao = 5; // TODO: CHANGE THIS TO THE CORRECT VALUE !!!!!!!!!!!!!!
   int size = nao * (nao + 1) / 2;
@@ -363,6 +365,8 @@ void dd(int nat, const int *saoshell, int saoshell_col_size) {
 
   double* slaterExponent = sycl::malloc_shared<double>(slaterExponent_size, q);
   std::copy(slaterExponentValues.begin(), slaterExponentValues.end(), slaterExponent);
+
+  ///////////////////////////////////////////////////
 
   q.submit([&](sycl::handler& h) {
     h.parallel_for(sycl::range<1>(total_size), [=](sycl::id<1> tid) {
@@ -456,7 +460,7 @@ int main() {
   //          << q.get_device().get_info<info::device::name>()
   //          << "\n";
 
-  dd(24, saoshell_flat, 5);
+  build_SDQH0(24, saoshell_flat, 5);
 
   //for jj in range(6):
   //    sspher = 0
