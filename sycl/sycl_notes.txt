@@ -1,0 +1,40 @@
+# Queues (schedule work)
+
+Queues are the only connection that allows an
+application to direct work to be done on a device. There are two types
+of actions that can be placed into a queue: (a) code to execute and (b)
+memory operations.
+
+**Code to execute** is expressed via either **single_task** or **parallel_for**.
+
+**Memory operations** perform copy operations between host and device or fill operations to initialize memory.
+
+NOTE: We only need to use memory operations if we seek more control than what is done automatically for us.
+
+
+# Latency vs Throughput
+
+For throughput, image processing might assign whole images to different processing units—in this case, our goal may be optimizing for images per second.
+
+For latency, image processing might assign each pixel within an image to different processing cores—in this case, our goal may be maximizing pixels per second from a single image.
+
+
+
+# Perfect speedup
+
+Perfect speed-up happens if one hundred packages are delivered in the same time as one package.
+
+Of course, it does not reliably work that way. At some point, there is a bottleneck that limits speed-up. There may not be one hundred places for trucks to dock at the distribution center. In a computer program, bottlenecks often involve moving data around to where it will be processed.
+
+
+# C++ Lambda Expressions
+
+For kernels in SYCL, the capture must be by value which is denoted by the inclusion of an equals sign within the brackets
+
+The basic syntax for a C++ lambda expression is
+[ capture-list ] ( params ) -> ret { body }
+
+With SYCL, [=] is always used for the capture-list because no variable is allowed to be captured by reference for use in a kernel.
+
+
+SYCL kernels must always have a return type of void, so we should not bother with the ret syntax to specify a return type for kernels.

@@ -16,7 +16,7 @@
       #ifort = pkgs.callPackage ./intel-ifort.nix {};
     };
 
-    devShells.x86_64-linux.default = pkgs.mkShell {
+    devShells.x86_64-linux.xtb = pkgs.mkShell {
       packages = with pkgs; [
         meson
         ninja
@@ -42,6 +42,12 @@
       shellHook = ''
         export FC=gfortran CC=gcc
       '';
+    };
+
+    devShells.x86_64-linux.default = pkgs.mkShell {
+      packages = with pkgs; [
+        adaptivecppWithRocm
+      ];
     };
   };
 }
