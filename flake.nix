@@ -44,9 +44,12 @@
       '';
     };
 
-    devShells.x86_64-linux.default = pkgs.mkShell {
+    devShells.x86_64-linux.default = pkgs.mkShell.override {stdenv = pkgs.clangStdenv;} {
       packages = with pkgs; [
         adaptivecppWithRocm
+        openblas
+        openblas.dev
+        clang-tools
       ];
     };
   };
